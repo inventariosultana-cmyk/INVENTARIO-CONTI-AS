@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Inventario CONTITECH</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<style>
+:root {
+  --bg: #f2f0eb;
+  --card: #ffffff;
+  --dark: #111318;
+  --accent: #e8500a;
+  --accent2: #f5a623;
+  --text: #111318;
+  --muted: #888;
+  --border: #e0ddd6;
+  --green: #1a9e5c;
+  --green-bg: #edf7f2;
+  --radius: 20px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); overflow-x: hidden; }
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ── TOP BAR ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px 12px; background: var(--bg);
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: var(--dark); }
+.topbar-logo span { color: var(--accent); }
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+.pill { background: var(--dark); color: #fff; font-size: 11px; font-weight: 600; padding: 5px 11px; border-radius: 100px; letter-spacing: 0.3px; }
+.pill.green { background: var(--green); }
+.pill.orange { background: var(--accent); }
+.back-btn {
+  background: var(--card); border: 1.5px solid var(--border); border-radius: 10px;
+  width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer; color: var(--dark); transition: background 0.15s;
+}
+.back-btn:active { background: var(--border); }
+
+/* ── PROGRESS BAR ── */
+.prog-track { height: 3px; background: var(--border); margin: 0 18px 16px; border-radius: 2px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.5s ease; }
+
+/* ── CARD ── */
+.card {
+  background: var(--card); border-radius: var(--radius);
+  margin: 0 14px; box-shadow: 0 2px 20px rgba(0,0,0,0.07);
+  overflow: hidden; animation: slideUp 0.3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes slideUp { from { opacity:0; transform:translateY(24px) scale(0.97); } to { opacity:1; transform:none; } }
+.card-bar { height: 5px; background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.card-body { padding: 22px 20px 20px; }
+.step-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 100px;
+  padding: 4px 11px; font-size: 11px; font-weight: 600; color: var(--muted);
+  letter-spacing: 0.5px; margin-bottom: 14px;
+}
+.step-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.card-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; line-height: 1.2; margin-bottom: 4px; }
+.card-sub { font-size: 13px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+
+/* ── FIELDS ── */
+.field-wrap { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+.field-label { font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); }
+.field-input {
+  background: var(--bg); border: 2px solid var(--border); border-radius: 12px;
+  padding: 13px 15px; font-family: 'DM Sans', sans-serif; font-size: 16px;
+  color: var(--dark); outline: none; width: 100%; -webkit-appearance: none; transition: border-color 0.2s;
+}
+.field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(232,80,10,0.08); }
+
+/* ── BUTTONS ── */
+.btn {
+  flex: 1; padding: 15px; border-radius: 13px; border: none;
+  font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 15px;
+  cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-dark { background: var(--dark); color: #fff; }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-ghost { background: var(--bg); color: var(--dark); border: 2px solid var(--border); flex: 0 0 auto; padding: 15px 18px; }
+.btn-ghost:active { background: var(--border); }
+.btn-row { display: flex; gap: 10px; margin-top: 10px; }
+.btn-full { width: 100%; justify-content: center; }
+
+/* ── BIG NUMBER INPUT ── */
+.num-wrap {
+  background: var(--bg); border: 2px solid var(--border); border-radius: 14px;
+  display: flex; align-items: center; overflow: hidden; margin-bottom: 8px; transition: border-color 0.2s;
+}
+.num-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px rgba(232,80,10,0.08); }
+.num-btn {
+  width: 58px; height: 64px; background: none; border: none; font-size: 26px;
+  color: var(--dark); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; user-select: none; -webkit-user-select: none; transition: background 0.1s;
+}
+.num-btn:active { background: var(--border); }
+.num-input {
+  flex: 1; background: none; border: none; text-align: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 40px;
+  color: var(--dark); outline: none; min-width: 0; padding: 0;
+}
+
+/* ── TOGGLE ── */
+.toggle-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; cursor: pointer; user-select: none; }
+.toggle-row input { display: none; }
+.toggle-box {
+  width: 40px; height: 22px; background: var(--border); border-radius: 100px;
+  position: relative; flex-shrink: 0; transition: background 0.2s;
+}
+.toggle-box::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: left 0.2s;
+}
+.toggle-row input:checked + .toggle-box { background: var(--accent); }
+.toggle-row input:checked + .toggle-box::after { left: 21px; }
+.toggle-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+.partial-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding-top: 14px; border-top: 1.5px dashed var(--border); margin-top: 4px; }
+.partial-grid .field-wrap { margin-bottom: 0; }
+
+/* ────────────────────────────────────────
+   SCREEN: PRODUCT LIST
+──────────────────────────────────────── */
+.list-scroll { flex: 1; overflow-y: auto; padding: 0 14px 100px; }
+
+/* Stats strip */
+.stats-strip { display: flex; gap: 8px; margin-bottom: 16px; }
+.stat-box {
+  flex: 1; background: var(--card); border-radius: 12px; padding: 12px 10px; text-align: center;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.05);
+}
+.stat-box .sn { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 24px; }
+.stat-box .sl { font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+.sn.green { color: var(--green); }
+.sn.orange { color: var(--accent); }
+.sn.dim { color: var(--muted); }
+
+/* Product list items */
+.prod-item {
+  background: var(--card); border-radius: 14px; padding: 14px 16px;
+  display: flex; align-items: center; gap: 14px; cursor: pointer;
+  margin-bottom: 8px; transition: all 0.15s; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+  border: 2px solid transparent;
+}
+.prod-item:active { transform: scale(0.985); background: #f9f8f5; }
+.prod-item.filled { border-color: rgba(26,158,92,0.25); background: var(--green-bg); }
+.prod-item.active-edit { border-color: var(--accent); }
+
+.prod-status {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.prod-status.empty { background: var(--bg); color: var(--muted); font-size: 12px; font-weight: 700; }
+.prod-status.done { background: var(--green-bg); color: var(--green); }
+
+.prod-info { flex: 1; min-width: 0; }
+.prod-code { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--dark); }
+.prod-desc { font-size: 12px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.prod-cat { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--accent); margin-top: 3px; }
+
+.prod-val { text-align: right; flex-shrink: 0; }
+.prod-val .pv-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--green); }
+.prod-val .pv-lbl { font-size: 10px; color: var(--muted); text-align: right; }
+.prod-val .pv-arrow { font-size: 18px; color: var(--border); }
+
+/* Floating action button */
+.fab-wrap { position: fixed; bottom: 24px; left: 0; right: 0; padding: 0 14px; z-index: 40; }
+.fab {
+  width: 100%; background: var(--dark); color: #fff; border: none; border-radius: 16px;
+  padding: 17px; font-family: 'DM Sans', sans-serif; font-weight: 700; font-size: 16px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.2); transition: all 0.15s;
+}
+.fab:active { transform: scale(0.98); }
+.fab.ready { background: var(--accent); }
+.fab:disabled { background: #ccc; color: #fff; box-shadow: none; }
+
+/* Section header in list */
+.list-section-hdr {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); margin: 16px 0 8px;
+}
+
+/* ────────────────────────────────────────
+   SCREEN: PRODUCT DETAIL
+──────────────────────────────────────── */
+.prod-detail-scroll { flex: 1; overflow-y: auto; padding: 0 14px 30px; }
+
+.prod-header-chip {
+  background: var(--dark); color: #fff; border-radius: 12px;
+  padding: 10px 14px; display: inline-flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.phc-code { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px; }
+.phc-cat {
+  font-size: 10px; background: var(--accent); color: #fff;
+  padding: 2px 8px; border-radius: 100px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+}
+.prod-name { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+.prod-meta-row { display: flex; gap: 16px; margin-bottom: 22px; }
+.pmi .pmil { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+.pmi .pmiv { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--dark); }
+
+.nav-pills {
+  display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: nowrap; overflow-x: auto;
+  padding-bottom: 4px; scrollbar-width: none;
+}
+.nav-pills::-webkit-scrollbar { display: none; }
+.nav-pill {
+  flex-shrink: 0; background: var(--card); border: 1.5px solid var(--border); border-radius: 100px;
+  padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer;
+  transition: all 0.15s; display: flex; align-items: center; gap: 5px;
+}
+.nav-pill:active { transform: scale(0.96); }
+.nav-pill.done { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+.nav-pill.current { border-color: var(--accent); color: var(--accent); background: rgba(232,80,10,0.06); }
+.nav-pill .pill-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+/* ────────────────────────────────────────
+   SCREEN: EXTRA
+──────────────────────────────────────── */
+.extra-scroll { flex: 1; overflow-y: auto; padding: 0 14px 100px; }
+.extra-item {
+  background: var(--card); border-radius: 14px; padding: 16px;
+  margin-bottom: 10px; position: relative; box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+}
+.extra-item .rm-btn {
+  position: absolute; top: 12px; right: 12px; width: 28px; height: 28px;
+  background: var(--bg); border: none; border-radius: 50%; font-size: 13px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted);
+}
+.extra-item .rm-btn:active { background: #ffd0c0; color: var(--accent); }
+.add-btn {
+  width: 100%; padding: 14px; background: none; border: 2px dashed var(--accent);
+  border-radius: 13px; color: var(--accent); font-family: 'DM Sans', sans-serif;
+  font-weight: 600; font-size: 14px; cursor: pointer; transition: background 0.15s; margin-bottom: 14px;
+}
+.add-btn:active { background: rgba(232,80,10,0.05); }
+
+/* ────────────────────────────────────────
+   SCREEN: REVIEW
+──────────────────────────────────────── */
+.review-scroll { flex: 1; overflow-y: auto; padding: 0 14px 110px; }
+.review-item {
+  background: var(--card); border-radius: 12px; padding: 13px 15px;
+  display: flex; align-items: center; gap: 12px; margin-bottom: 8px;
+}
+.ri-code { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; min-width: 54px; }
+.ri-desc { flex: 1; font-size: 12px; color: var(--muted); line-height: 1.4; }
+.ri-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 20px; color: var(--green); text-align: right; }
+.ri-val .rv-lbl { font-size: 10px; font-family: 'DM Sans', sans-serif; font-weight: 400; color: var(--muted); display: block; }
+.ri-skipped { opacity: 0.4; }
+.review-section-hdr {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--muted); margin: 16px 0 8px;
+}
+
+/* ── LOADING ── */
+#loadingOverlay {
+  position: fixed; inset: 0; background: rgba(242,240,235,0.92);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 999; gap: 16px; backdrop-filter: blur(4px);
+}
+#loadingOverlay.show { display: flex; }
+.loader-ring {
+  width: 52px; height: 52px; border: 4px solid var(--border);
+  border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-text { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px; color: var(--dark); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(50px);
+  background: var(--dark); color: #fff; padding: 11px 22px; border-radius: 100px;
+  font-size: 13px; font-weight: 500; z-index: 1000; opacity: 0;
+  transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.25s;
+  white-space: nowrap; max-width: 90vw; text-align: center;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+#toast.err { background: var(--accent); }
+
+/* ── EMAIL MODAL ── */
+#emailModal {
+  position: fixed; inset: 0; background: rgba(17,19,24,0.55);
+  display: none; align-items: flex-end; justify-content: center;
+  z-index: 900; backdrop-filter: blur(3px);
+  padding: 0;
+}
+#emailModal.show { display: flex; }
+.modal-sheet {
+  background: var(--bg); border-radius: 24px 24px 0 0;
+  width: 100%; max-width: 560px;
+  padding: 20px 18px 36px;
+  animation: slideUp 0.3s cubic-bezier(.34,1.56,.64,1);
+  max-height: 85vh; display: flex; flex-direction: column;
+}
+.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; margin-bottom: 4px; }
+.modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
+.modal-scroll { flex: 1; overflow-y: auto; }
+
+/* ── RESET BTN ── */
+.btn-danger { background: #fff0ee; color: var(--accent); border: 2px solid rgba(232,80,10,0.2); }
+.btn-danger:active { background: #ffd0c0; }
+
+
+/* ── DONE SCREEN ── */
+.done-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; text-align: center; }
+.done-icon { font-size: 64px; margin-bottom: 16px; }
+.done-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 26px; margin-bottom: 8px; }
+.done-sub { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 6px; }
+.done-email { font-weight: 700; color: var(--accent); font-size: 14px; margin-bottom: 28px; word-break: break-all; }
+.done-detail { background: var(--card); border-radius: 14px; padding: 16px; text-align: left; width: 100%; max-width: 400px; margin-bottom: 24px; font-size: 13px; line-height: 2; }
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay"><div class="loader-ring"></div><div class="loader-text" id="loaderTxt">Procesando...</div></div>
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     MODAL: GESTIÓN DE CORREOS
+══════════════════════════════════════ -->
+<div id="emailModal" onclick="if(event.target===this)closeEmailModal()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✉️ Destinatarios</div>
+    <div class="modal-sub">El reporte se enviará a todos estos correos. Puedes editar la lista cuando necesites.</div>
+    <div class="modal-scroll" id="emailListWrap"></div>
+    <button class="add-btn" style="margin-top:12px;margin-bottom:12px;" onclick="addEmailField()">+ Agregar correo</button>
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeEmailModal()">Cancelar</button>
+      <button class="btn btn-accent" onclick="saveEmails()">Guardar lista</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 1: META (datos generales)
+══════════════════════════════════════ -->
+<div class="screen active" id="screenMeta">
+  <div class="topbar">
+    <div class="topbar-logo">CONTI<span>TECH</span></div>
+    <div class="topbar-right"><div class="pill">Inicio</div></div>
+  </div>
+  <div class="prog-track"><div class="prog-fill" style="width:8%"></div></div>
+  <div style="flex:1;overflow-y:auto;padding:0 14px 30px;">
+    <div class="card">
+      <div class="card-bar"></div>
+      <div class="card-body">
+        <div class="step-badge"><div class="dot"></div>Datos generales</div>
+        <div class="card-title">¿Quién hace el conteo?</div>
+        <div class="card-sub">Llena estos datos antes de comenzar.</div>
+        <div class="field-wrap"><div class="field-label">Fecha</div><input class="field-input" type="date" id="f_fecha"></div>
+        <div class="field-wrap"><div class="field-label">Responsable</div><input class="field-input" type="text" id="f_resp" placeholder="Tu nombre"></div>
+        <div class="field-wrap"><div class="field-label">Turno</div>
+          <select class="field-input" id="f_turno">
+            <option value="">— Seleccionar —</option>
+            <option>Matutino</option><option>Vespertino</option><option>Nocturno</option>
+          </select>
+        </div>
+        <div class="field-wrap"><div class="field-label">Observaciones (opcional)</div><input class="field-input" type="text" id="f_obs" placeholder="Notas generales..."></div>
+        <div class="btn-row"><button class="btn btn-dark btn-full" onclick="saveMeta()">Comenzar conteo →</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 2: PRODUCT LIST
+══════════════════════════════════════ -->
+<div class="screen" id="screenList">
+  <div class="topbar">
+    <div class="topbar-logo">CONTI<span>TECH</span></div>
+    <div class="topbar-right">
+      <div class="pill green" id="listPillDone">0 listos</div>
+      <div class="pill" id="listPillPend">12 faltantes</div>
+      <button class="back-btn" title="Reiniciar inventario" onclick="resetInventario()" style="font-size:13px;color:var(--accent);">↺</button>
+    </div>
+  </div>
+  <div class="prog-track"><div class="prog-fill" id="listProgress" style="width:15%"></div></div>
+  <div class="list-scroll" id="listScroll">
+    <div class="stats-strip">
+      <div class="stat-box"><div class="sn green" id="statDone">0</div><div class="sl">Listos</div></div>
+      <div class="stat-box"><div class="sn orange" id="statTotal">0</div><div class="sl">Tarimas</div></div>
+      <div class="stat-box"><div class="sn dim" id="statPend">12</div><div class="sl">Faltantes</div></div>
+    </div>
+    <div class="list-section-hdr">Toca cualquier producto para registrar</div>
+    <div id="prodList"></div>
+  </div>
+  <div class="fab-wrap">
+    <button class="fab" id="fabList" onclick="goToExtra()">Continuar a material extra →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 3: PRODUCT DETAIL
+══════════════════════════════════════ -->
+<div class="screen" id="screenDetail">
+  <div class="topbar">
+    <div class="topbar-right" style="justify-content:space-between;width:100%;">
+      <button class="back-btn" onclick="backToList()">←</button>
+      <div class="topbar-logo">CONTI<span>TECH</span></div>
+      <div class="pill orange" id="detailPill">1/12</div>
+    </div>
+  </div>
+  <div class="prod-detail-scroll" id="detailScroll">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 4: EXTRA
+══════════════════════════════════════ -->
+<div class="screen" id="screenExtra">
+  <div class="topbar">
+    <div class="topbar-right" style="justify-content:space-between;width:100%;">
+      <button class="back-btn" onclick="showList()">←</button>
+      <div class="topbar-logo">CONTI<span>TECH</span></div>
+      <div class="pill">Material extra</div>
+    </div>
+  </div>
+  <div class="prog-track"><div class="prog-fill" style="width:80%"></div></div>
+  <div class="extra-scroll">
+    <div class="card" style="margin-bottom:14px;">
+      <div class="card-bar"></div>
+      <div class="card-body">
+        <div class="step-badge"><div class="dot"></div>Opcional</div>
+        <div class="card-title">¿Solicitud de material extra?</div>
+        <div class="card-sub">Si el cliente pide material adicional, regístralo aquí. Si no, salta esta sección.</div>
+        <div class="field-wrap"><div class="field-label">Cliente</div><input class="field-input" type="text" id="exCliente" placeholder="Nombre del cliente"></div>
+        <div class="field-wrap"><div class="field-label">Responsable cliente</div><input class="field-input" type="text" id="exResp" placeholder="Nombre responsable"></div>
+      </div>
+    </div>
+    <div id="extraItemsWrap"></div>
+    <button class="add-btn" onclick="addExtra()">+ Agregar material extra</button>
+  </div>
+  <div class="fab-wrap">
+    <button class="fab ready" onclick="goToReview()">Ver resumen →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 5: REVIEW
+══════════════════════════════════════ -->
+<div class="screen" id="screenReview">
+  <div class="topbar">
+    <div class="topbar-right" style="justify-content:space-between;width:100%;">
+      <button class="back-btn" onclick="showExtra()">←</button>
+      <div class="topbar-logo">CONTI<span>TECH</span></div>
+      <div style="display:flex;gap:6px;">
+        <button class="back-btn" title="Editar destinatarios" onclick="openEmailModal()" style="font-size:14px;">✉️</button>
+        <button class="back-btn" title="Reiniciar inventario" onclick="resetInventario()" style="font-size:14px;color:var(--accent);">↺</button>
+      </div>
+    </div>
+  </div>
+  <div class="prog-track"><div class="prog-fill" style="width:92%"></div></div>
+  <div class="review-scroll" id="reviewScroll"></div>
+  <div class="fab-wrap">
+    <button class="fab ready" onclick="sendReport()">📧 Enviar reporte por correo</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN 6: DONE
+══════════════════════════════════════ -->
+<div class="screen" id="screenDone">
+  <div class="topbar">
+    <div class="topbar-logo">CONTI<span>TECH</span></div>
+    <div class="pill green">Enviado ✓</div>
+  </div>
+  <div class="done-body">
+    <div class="done-icon">✅</div>
+    <div class="done-title">¡Reporte enviado!</div>
+    <div class="done-sub">El inventario fue enviado correctamente a:</div>
+    <div class="done-email" id="doneEmail"></div>
+    <div class="done-detail" id="doneDetail"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:400px;">
+      <button class="btn btn-dark btn-full" style="justify-content:center;" onclick="resetInventario()">↺ &nbsp;Nuevo inventario</button>
+      <button class="btn btn-ghost btn-full" style="justify-content:center;" onclick="openEmailModal()">✉️ &nbsp;Editar destinatarios</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const EMAILJS_PUBLIC_KEY  = 'DzfcEWiBsQb1cHq5k';
+const EMAILJS_SERVICE_ID  = 'service_hgn8n9j';
+const EMAILJS_TEMPLATE_ID = 'template_yfqr8s8';
+
+// ── LISTA DE DESTINATARIOS ──
+// Edita estos correos aquí o usa el botón ✉ en la pantalla de resumen
+let EMAIL_LIST = [
+  'juan.blanco@cartonsultana.com.mx',
+  'supervisor@cartonsultana.com.mx',
+];
+emailjs.init(EMAILJS_PUBLIC_KEY);
+
+// ── PRODUCTS ──
+const productos = [
+  { codigo:'149999', desc:'7303443 GENERICA CONTI 1/4 S/L',  cat:'ROJO MORADO ROSA', esp:2, pzas:80   },
+  { codigo:'156120', desc:'7303444 GENERICA CONT1/6 S/L',    cat:'ROJO MORADO ROSA', esp:1, pzas:150  },
+  { codigo:'156574', desc:'7302335 CONTI 1/6',                cat:'ROJO MORADO ROSA', esp:4, pzas:160  },
+  { codigo:'140550', desc:'SEPARADOR HENDRICKSON QD',         cat:null,               esp:1, pzas:1320 },
+  { codigo:'155463', desc:'7302060 CONTI 1/4',                cat:'AZUL',             esp:5, pzas:75   },
+  { codigo:'156575', desc:'7302059 CONTI1/2',                 cat:'AZUL',             esp:1, pzas:75   },
+  { codigo:'155206', desc:'7302055 ASC2 AUTOMAN',             cat:null,               esp:8, pzas:150  },
+  { codigo:'155207', desc:'7302056 ASC3 AUTOMAN 42KBC',       cat:'VERDE',            esp:4, pzas:240  },
+  { codigo:'151103', desc:'7302057 ASC4 AUTOMAN 42KBC',       cat:'VERDE',            esp:1, pzas:160  },
+  { codigo:'155209', desc:'7302058 ASC8 AUTOMAN 42KBC',       cat:'NARANJA',          esp:3, pzas:240  },
+  { codigo:'841601', desc:'PAD SAF 23KC HOLLAND CONTI 1/4',   cat:null,               esp:1, pzas:500  },
+  { codigo:'841588', desc:'PAD SAF 23KC CONTI 1/2',           cat:null,               esp:1, pzas:250  },
+];
+
+// ── STATE ──
+const state = {
+  fecha:'', responsable:'', turno:'', observaciones:'',
+  inv: productos.map(() => ({ tarimas:'', pzas_parciales:'', total_parciales:'' })),
+  currentProd: 0,
+  extras: [],
+  extraCliente:'', extraResp:'',
+};
+
+// ── SCREEN NAVIGATION ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ────────────────────────────────────────
+// SCREEN: META
+// ────────────────────────────────────────
+(function initMeta() {
+  const t = new Date();
+  document.getElementById('f_fecha').value =
+    `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+})();
+
+function saveMeta() {
+  const fecha = document.getElementById('f_fecha').value;
+  const resp  = document.getElementById('f_resp').value.trim();
+  if (!fecha) { showToast('Selecciona la fecha','err'); return; }
+  if (!resp)  { showToast('Escribe el nombre del responsable','err'); return; }
+  state.fecha = fecha;
+  state.responsable = resp;
+  state.turno = document.getElementById('f_turno').value;
+  state.observaciones = document.getElementById('f_obs').value.trim();
+  showList();
+}
+
+// ────────────────────────────────────────
+// SCREEN: LIST
+// ────────────────────────────────────────
+function showList() {
+  renderList();
+  showScreen('screenList');
+}
+
+function renderList() {
+  const done  = state.inv.filter(r => r.tarimas !== '').length;
+  const total = state.inv.reduce((s,r) => s + (parseInt(r.tarimas)||0), 0);
+  const pend  = productos.length - done;
+
+  document.getElementById('statDone').textContent  = done;
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statPend').textContent  = pend;
+  document.getElementById('listPillDone').textContent = `${done} listos`;
+  document.getElementById('listPillPend').textContent = `${pend} faltantes`;
+
+  const pct = 15 + (done / productos.length) * 55;
+  document.getElementById('listProgress').style.width = pct + '%';
+
+  const fab = document.getElementById('fabList');
+  if (done === productos.length) {
+    fab.textContent = 'Continuar a material extra →';
+    fab.classList.add('ready');
+  } else {
+    fab.innerHTML = `Continuar (${pend} sin registrar) →`;
+    fab.classList.remove('ready');
+  }
+
+  // Render items
+  const listEl = document.getElementById('prodList');
+  listEl.innerHTML = '';
+
+  // Split into filled / pending
+  const pending = [], filled = [];
+  productos.forEach((p, i) => {
+    state.inv[i].tarimas !== '' ? filled.push(i) : pending.push(i);
+  });
+
+  function makeItem(i) {
+    const p = productos[i];
+    const r = state.inv[i];
+    const isFilled = r.tarimas !== '';
+    const div = document.createElement('div');
+    div.className = `prod-item${isFilled ? ' filled' : ''}`;
+    div.onclick = () => openDetail(i);
+    div.innerHTML = `
+      <div class="prod-status ${isFilled ? 'done' : 'empty'}">
+        ${isFilled ? '✓' : String(i+1).padStart(2,'0')}
+      </div>
+      <div class="prod-info">
+        <div class="prod-code">${p.codigo}</div>
+        <div class="prod-desc">${p.desc}</div>
+        ${p.cat ? `<div class="prod-cat">${p.cat}</div>` : ''}
+      </div>
+      <div class="prod-val">
+        ${isFilled
+          ? `<div class="pv-num">${r.tarimas}</div><div class="pv-lbl">tarimas</div>`
+          : `<div class="pv-arrow">›</div>`}
+      </div>`;
+    return div;
+  }
+
+  if (pending.length > 0) {
+    const hdr = document.createElement('div');
+    hdr.className = 'list-section-hdr';
+    hdr.textContent = `Sin registrar (${pending.length})`;
+    listEl.appendChild(hdr);
+    pending.forEach(i => listEl.appendChild(makeItem(i)));
+  }
+
+  if (filled.length > 0) {
+    const hdr = document.createElement('div');
+    hdr.className = 'list-section-hdr';
+    hdr.style.marginTop = pending.length ? '20px' : '0';
+    hdr.textContent = `Registrados (${filled.length})`;
+    listEl.appendChild(hdr);
+    filled.forEach(i => listEl.appendChild(makeItem(i)));
+  }
+}
+
+// ────────────────────────────────────────
+// SCREEN: DETAIL
+// ────────────────────────────────────────
+function openDetail(idx) {
+  state.currentProd = idx;
+  renderDetail();
+  showScreen('screenDetail');
+}
+
+function renderDetail() {
+  const i = state.currentProd;
+  const p = productos[i];
+  const r = state.inv[i];
+  const hasPartial = r.pzas_parciales !== '' || r.total_parciales !== '';
+
+  document.getElementById('detailPill').textContent = `${i+1} / ${productos.length}`;
+
+  // Build quick-nav pills (show nearby products + all filled ones)
+  const pillIdxs = new Set();
+  for (let k = 0; k < productos.length; k++) pillIdxs.add(k); // show all
+  let pillsHtml = Array.from(pillIdxs).map(k => {
+    const filled = state.inv[k].tarimas !== '';
+    const isCur  = k === i;
+    return `<div class="nav-pill ${filled ? 'done' : ''} ${isCur ? 'current' : ''}" onclick="switchDetail(${k})">
+      <div class="pill-dot"></div>${productos[k].codigo}
+    </div>`;
+  }).join('');
+
+  document.getElementById('detailScroll').innerHTML = `
+    <!-- Quick nav -->
+    <div style="padding:4px 0 0;margin-bottom:4px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding:0 2px;">Saltar a otro producto</div>
+      <div class="nav-pills">${pillsHtml}</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-bar"></div>
+      <div class="card-body">
+        <div class="prod-header-chip">
+          <span class="phc-code">${p.codigo}</span>
+          ${p.cat ? `<span class="phc-cat">${p.cat}</span>` : ''}
+        </div>
+        <div class="prod-name">${p.desc}</div>
+        <div class="prod-meta-row">
+          <div class="pmi"><div class="pmil">ESP/TAR</div><div class="pmiv">${p.esp}</div></div>
+          <div class="pmi"><div class="pmil">PZAS/TAR</div><div class="pmiv">${p.pzas.toLocaleString()}</div></div>
+        </div>
+
+        <div class="field-wrap" style="margin-bottom:6px;"><div class="field-label">Tarimas en inventario</div></div>
+        <div class="num-wrap">
+          <button class="num-btn" ontouchstart="" onclick="adjNum(-1)">−</button>
+          <input class="num-input" type="number" inputmode="numeric" min="0" id="numTar"
+            value="${r.tarimas}" placeholder="0">
+          <button class="num-btn" ontouchstart="" onclick="adjNum(1)">+</button>
+        </div>
+
+        <label class="toggle-row" id="toggleRow">
+          <input type="checkbox" id="chkPartial" ${hasPartial?'checked':''} onchange="togglePartial()">
+          <div class="toggle-box"></div>
+          <span class="toggle-label">¿Hay tarimas parciales?</span>
+        </label>
+
+        <div id="partialFields" style="${hasPartial?'':'display:none'}">
+          <div class="partial-grid">
+            <div class="field-wrap"><div class="field-label">Cantidad (pzas)</div>
+              <input class="field-input" type="number" inputmode="numeric" id="numPzas"
+                placeholder="0" value="${r.pzas_parciales}" style="padding:12px 14px;text-align:center;">
+            </div>
+            <div class="field-wrap"><div class="field-label">Total tarimas parc.</div>
+              <input class="field-input" type="number" inputmode="numeric" id="numTotPar"
+                placeholder="0" value="${r.total_parciales}" style="padding:12px 14px;text-align:center;">
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row" style="margin-top:20px;">
+          <button class="btn btn-dark btn-full" onclick="saveDetail(${i})">
+            ${i < productos.length-1 ? 'Guardar y siguiente →' : 'Guardar →'}
+          </button>
+        </div>
+        <button style="width:100%;padding:13px;margin-top:8px;background:none;border:2px dashed var(--border);border-radius:12px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;" onclick="clearAndNext(${i})">
+          Limpiar y saltar
+        </button>
+      </div>
+    </div>
+  `;
+
+  // Scroll the current pill into view
+  setTimeout(() => {
+    const pills = document.querySelector('.nav-pills');
+    const cur = pills?.querySelector('.nav-pill.current');
+    if (cur) cur.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+    document.getElementById('numTar')?.focus();
+  }, 120);
+}
+
+function switchDetail(idx) {
+  // Save current before switching
+  saveCurrentToState(state.currentProd);
+  state.currentProd = idx;
+  renderDetail();
+}
+
+function saveCurrentToState(i) {
+  const tarEl = document.getElementById('numTar');
+  const chk   = document.getElementById('chkPartial');
+  if (!tarEl) return;
+  const tar   = tarEl.value.trim();
+  const pzas  = (chk?.checked && document.getElementById('numPzas'))  ? document.getElementById('numPzas').value.trim()   : '';
+  const totp  = (chk?.checked && document.getElementById('numTotPar'))? document.getElementById('numTotPar').value.trim() : '';
+  state.inv[i] = { tarimas: tar, pzas_parciales: pzas, total_parciales: totp };
+}
+
+function adjNum(d) {
+  const el = document.getElementById('numTar');
+  el.value = Math.max(0, (parseInt(el.value)||0) + d);
+}
+
+function togglePartial() {
+  const checked = document.getElementById('chkPartial').checked;
+  document.getElementById('partialFields').style.display = checked ? '' : 'none';
+}
+
+function saveDetail(i) {
+  saveCurrentToState(i);
+  showToast('✓ Guardado');
+  // Go to next unfilled, or back to list if all filled
+  const nextUnfilled = findNextUnfilled(i);
+  if (nextUnfilled !== null) {
+    state.currentProd = nextUnfilled;
+    renderDetail();
+  } else {
+    backToList();
+  }
+}
+
+function findNextUnfilled(from) {
+  // Search forward from current
+  for (let k = from+1; k < productos.length; k++) {
+    if (state.inv[k].tarimas === '') return k;
+  }
+  // Wrap around
+  for (let k = 0; k < from; k++) {
+    if (state.inv[k].tarimas === '') return k;
+  }
+  return null; // all filled
+}
+
+function clearAndNext(i) {
+  state.inv[i] = { tarimas:'', pzas_parciales:'', total_parciales:'' };
+  backToList();
+}
+
+function backToList() {
+  saveCurrentToState(state.currentProd);
+  showList();
+}
+
+// ────────────────────────────────────────
+// SCREEN: EXTRA
+// ────────────────────────────────────────
+let extraCount = 0;
+
+function goToExtra() {
+  document.getElementById('exCliente').value = state.extraCliente;
+  document.getElementById('exResp').value    = state.extraResp;
+  renderExtras();
+  showScreen('screenExtra');
+}
+
+function showExtra() { showScreen('screenExtra'); }
+
+function renderExtras() {
+  const wrap = document.getElementById('extraItemsWrap');
+  wrap.innerHTML = '';
+  if (state.extras.length === 0) return;
+  state.extras.forEach((ex, i) => {
+    const div = document.createElement('div');
+    div.className = 'extra-item';
+    div.id = `exItem_${i}`;
+    div.innerHTML = `
+      ${state.extras.length > 1 ? `<button class="rm-btn" onclick="removeExtra(${i})">✕</button>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="field-wrap" style="margin:0;"><div class="field-label">Código</div>
+          <input class="field-input" id="ex_c_${i}" type="text" placeholder="Código" value="${ex.codigo}" style="padding:11px 13px;"></div>
+        <div class="field-wrap" style="margin:0;"><div class="field-label">Tarimas</div>
+          <input class="field-input" id="ex_t_${i}" type="number" inputmode="numeric" placeholder="0" value="${ex.tarimas}" style="padding:11px 13px;text-align:center;"></div>
+      </div>
+      <div class="field-wrap" style="margin-bottom:8px;"><div class="field-label">Descripción</div>
+        <input class="field-input" id="ex_d_${i}" type="text" placeholder="Nombre del material" value="${ex.desc}" style="padding:11px 13px;"></div>
+      <div class="field-wrap" style="margin:0;"><div class="field-label">Motivo (opcional)</div>
+        <input class="field-input" id="ex_m_${i}" type="text" placeholder="Motivo de solicitud" value="${ex.motivo}" style="padding:11px 13px;"></div>
+    `;
+    wrap.appendChild(div);
+  });
+}
+
+function addExtra() {
+  syncExtras();
+  state.extras.push({ codigo:'', desc:'', tarimas:'', motivo:'' });
+  renderExtras();
+  // scroll to bottom
+  setTimeout(() => document.querySelector('.extra-scroll').scrollTo(0,99999), 50);
+}
+
+function removeExtra(i) {
+  syncExtras();
+  state.extras.splice(i,1);
+  renderExtras();
+}
+
+function syncExtras() {
+  state.extras.forEach((_, i) => {
+    state.extras[i] = {
+      codigo:  document.getElementById(`ex_c_${i}`)?.value.trim() || '',
+      tarimas: document.getElementById(`ex_t_${i}`)?.value.trim() || '',
+      desc:    document.getElementById(`ex_d_${i}`)?.value.trim() || '',
+      motivo:  document.getElementById(`ex_m_${i}`)?.value.trim() || '',
+    };
+  });
+}
+
+function goToReview() {
+  syncExtras();
+  state.extraCliente = document.getElementById('exCliente').value.trim();
+  state.extraResp    = document.getElementById('exResp').value.trim();
+  renderReview();
+  showScreen('screenReview');
+}
+
+// ────────────────────────────────────────
+// SCREEN: REVIEW
+// ────────────────────────────────────────
+function renderReview() {
+  const done  = state.inv.filter(r => r.tarimas !== '').length;
+  const total = state.inv.reduce((s,r) => s+(parseInt(r.tarimas)||0), 0);
+
+  let html = `
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <div style="flex:1;background:var(--dark);color:#fff;border-radius:12px;padding:14px 10px;text-align:center;">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--accent2);">${total}</div>
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#aaa;margin-top:2px;">Total tarimas</div>
+      </div>
+      <div style="flex:1;background:var(--card);border-radius:12px;padding:14px 10px;text-align:center;box-shadow:0 1px 8px rgba(0,0,0,.05);">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--green);">${done}</div>
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:2px;">Registrados</div>
+      </div>
+      <div style="flex:1;background:var(--card);border-radius:12px;padding:14px 10px;text-align:center;box-shadow:0 1px 8px rgba(0,0,0,.05);">
+        <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--muted);">${productos.length-done}</div>
+        <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:2px;">Sin dato</div>
+      </div>
+    </div>
+    <div style="background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:13px;line-height:1.9;box-shadow:0 1px 8px rgba(0,0,0,.04);">
+      📅 <strong>${state.fecha}</strong> &nbsp;·&nbsp; 👤 <strong>${state.responsable}</strong> &nbsp;·&nbsp; 🕐 <strong>${state.turno||'—'}</strong>
+      ${state.observaciones ? `<br>📝 ${state.observaciones}` : ''}
+    </div>
+    <div class="review-section-hdr">Inventario</div>`;
+
+  productos.forEach((p, i) => {
+    const r = state.inv[i];
+    const skip = r.tarimas === '';
+    html += `<div class="review-item ${skip?'ri-skipped':''}">
+      <div class="ri-code">${p.codigo}</div>
+      <div class="ri-desc">${p.desc}</div>
+      <div class="ri-val">${skip ? '—' : r.tarimas}<span>${skip ? 'sin dato' : 'tarimas'}</span></div>
+    </div>`;
+  });
+
+  const hasExtras = state.extras.some(e => e.codigo || e.desc);
+  if (hasExtras) {
+    html += `<div class="review-section-hdr" style="margin-top:20px;">Material Extra · ${state.extraCliente||'—'}</div>`;
+    state.extras.filter(e=>e.codigo||e.desc).forEach(e => {
+      html += `<div class="review-item">
+        <div class="ri-code">${e.codigo||'—'}</div>
+        <div class="ri-desc">${e.desc}</div>
+        <div class="ri-val">${e.tarimas||'—'}<span>tarimas</span></div>
+      </div>`;
+    });
+  }
+
+  document.getElementById('reviewScroll').innerHTML = html;
+}
+
+// ────────────────────────────────────────
+// SEND REPORT
+// ────────────────────────────────────────
+async function sendReport() {
+  showLoading('Preparando reporte...');
+  try {
+    const htmlBody = buildEmailHTML();
+    setLoaderTxt('Enviando correo...');
+
+    if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
+      hideLoading();
+      showSetupNote();
+      return;
+    }
+
+    // Enviar a cada destinatario de la lista
+    const recipients = EMAIL_LIST.filter(e => e.trim());
+    for (const email of recipients) {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email:    email.trim(),
+        from_name:   'Sistema Inventario CONTITECH AS',
+        fecha:       state.fecha,
+        responsable: state.responsable,
+        turno:       state.turno || '—',
+        subject:     `Inventario CONTITECH AS — ${state.fecha}`,
+        message:     `Inventario del ${state.fecha}, responsable: ${state.responsable}.`,
+        html_body:   htmlBody,
+      });
+    }
+
+    hideLoading();
+    document.getElementById('doneEmail').innerHTML = EMAIL_LIST.filter(e=>e.trim())
+      .map(e => `<div>${e.trim()}</div>`).join('');
+    document.getElementById('doneDetail').innerHTML =
+      `📅 Fecha: <strong>${state.fecha}</strong><br>👤 Responsable: <strong>${state.responsable}</strong><br>🕐 Turno: <strong>${state.turno||'—'}</strong>`;
+    showScreen('screenDone');
+
+  } catch(err) {
+    hideLoading();
+    console.error(err);
+    EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY' ? showSetupNote() : showToast('Error al enviar. Revisa consola.','err');
+  }
+}
+
+function showSetupNote() {
+  const rev = document.getElementById('reviewScroll');
+  if (rev.querySelector('.setup-note')) return;
+  const div = document.createElement('div');
+  div.className = 'setup-note';
+  div.style.cssText = 'background:#fff8f5;border:2px solid var(--accent);border-radius:14px;padding:18px;margin-top:16px;font-size:13px;line-height:1.7;';
+  div.innerHTML = `<strong style="color:var(--accent);font-family:Syne,sans-serif;">⚙️ Configura EmailJS para enviar</strong><br><br>
+    1. Crea cuenta gratis en <a href="https://emailjs.com" target="_blank" style="color:var(--accent);">emailjs.com</a><br>
+    2. Conecta tu Gmail y crea un template con <code>{{image_base64}}</code><br>
+    3. Reemplaza en el archivo HTML las 3 constantes:<br>
+    <code style="background:#f0ede8;padding:2px 6px;border-radius:4px;font-size:12px;">EMAILJS_PUBLIC_KEY, SERVICE_ID, TEMPLATE_ID</code>`;
+  rev.appendChild(div);
+  showToast('Configura EmailJS para activar el envío','err');
+}
+
+// ────────────────────────────────────────
+// BUILD EMAIL HTML
+// ────────────────────────────────────────
+function buildEmailHTML() {
+  const rows = productos.map((p,i) => {
+    const r = state.inv[i];
+    const bg = i%2===0 ? '#f9f9f9' : '#ffffff';
+
+    const tarimas     = parseInt(r.tarimas) || 0;
+    const pzasParcial = parseInt(r.pzas_parciales) || 0;
+    const esp         = parseInt(p.esp) || 1;  // espacios/tarima (capacidad)
+
+    // Regla del parcial:
+    // Si pzasParcial >= 50% de pzas/tarima → cuenta como tarima completa (no surtir)
+    // Si pzasParcial > 0 y < 50%           → cuenta como faltante (sí surtir)
+    let parcialEsTarima = false;
+    let parcialEsFaltante = false;
+    if (pzasParcial > 0) {
+      const mitad = p.pzas / 2;
+      if (pzasParcial >= mitad) {
+        parcialEsTarima = true;   // ≥50%: equivale a tarima completa
+      } else {
+        parcialEsFaltante = true; // <50%: falta completar
+      }
+    }
+
+    // POR SURTIR = esp - tarimas_en_inv - (1 si parcial cuenta como tarima)
+    const tarimасEfectivas = tarimas + (parcialEsTarima ? 1 : 0);
+    const porSurtir = Math.max(0, esp - tarimасEfectivas);
+
+    // Color de POR SURTIR
+    let surtirColor = '#1a7a3f';   // verde = ok, no falta nada
+    if (parcialEsFaltante) surtirColor = '#f5a623';  // naranja = parcial insuficiente
+    if (porSurtir > 0)     surtirColor = '#e8500a';  // rojo = faltan tarimas completas
+
+    // Texto del parcial: solo mostrar piezas si hay
+    const parcialTxt = pzasParcial > 0
+      ? `${pzasParcial} pzas${parcialEsTarima ? ' ✓' : ' ⚠️'}`
+      : '—';
+
+    return `<tr style="background:${bg}">
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;font-family:monospace;font-weight:700;">${p.codigo}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;font-size:12px;">${p.desc}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">${p.esp}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">${p.pzas.toLocaleString()}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;font-weight:700;font-size:15px;color:${r.tarimas!==''?'#1a7a3f':'#bbb'};">${r.tarimas||'—'}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;font-size:11px;color:#555;">${parcialTxt}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;font-weight:700;color:${surtirColor};">${r.tarimas==='' ? '—' : porSurtir}</td>
+    </tr>`;
+  }).join('');
+
+  const hasEx = state.extras.some(e=>e.codigo||e.desc);
+  const exRows = hasEx ? state.extras.filter(e=>e.codigo||e.desc).map(e=>
+    `<tr>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;font-family:monospace;font-weight:700;">${e.codigo}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;">${e.desc}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">${e.tarimas}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;">${e.motivo}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;"></td>
+    </tr>`
+  ).join('') : '';
+
+  const totalT = state.inv.reduce((s,r)=>s+(parseInt(r.tarimas)||0),0);
+  const filled = state.inv.filter(r=>r.tarimas!=='').length;
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f2f0eb;font-family:Arial,sans-serif;">
+<div style="max-width:900px;margin:0 auto;background:#ffffff;padding:32px;">
+
+  <!-- HEADER -->
+  <div style="background:#111318;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+      <div style="color:#e8500a;font-size:22px;font-weight:700;font-family:monospace;letter-spacing:2px;">CONTITECH AS</div>
+      <div style="color:#aaaaaa;font-size:11px;letter-spacing:2px;margin-top:4px;">REPORTE DE INVENTARIO</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="color:#aaaaaa;font-size:10px;letter-spacing:2px;">FECHA</div>
+      <div style="color:#f5a623;font-size:20px;font-family:monospace;font-weight:700;">${state.fecha}</div>
+    </div>
+  </div>
+
+  <!-- RESUMEN -->
+  <table style="width:100%;border-collapse:collapse;margin-bottom:8px;background:#f9f9f9;">
+    <tr>
+      <td style="padding:10px 16px;border:1px solid #e0ddd6;">
+        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Responsable</strong><br>
+        <span style="font-size:14px;">${state.responsable}</span>
+      </td>
+      <td style="padding:10px 16px;border:1px solid #e0ddd6;">
+        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Turno</strong><br>
+        <span style="font-size:14px;">${state.turno||'—'}</span>
+      </td>
+      <td style="padding:10px 16px;border:1px solid #e0ddd6;">
+        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Tarimas</strong><br>
+        <span style="font-size:18px;font-weight:700;color:#1a7a3f;">${totalT}</span>
+      </td>
+      <td style="padding:10px 16px;border:1px solid #e0ddd6;">
+        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Productos</strong><br>
+        <span style="font-size:14px;">${filled} / ${productos.length}</span>
+      </td>
+      ${state.observaciones ? `<td style="padding:10px 16px;border:1px solid #e0ddd6;">
+        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Observaciones</strong><br>
+        <span style="font-size:13px;">${state.observaciones}</span>
+      </td>` : ''}
+    </tr>
+  </table>
+
+  <!-- LEYENDA COLORES -->
+  <div style="display:flex;gap:16px;margin:12px 0;font-size:11px;color:#555;">
+    <span><strong style="color:#1a7a3f;">■</strong> Completo</span>
+    <span><strong style="color:#f5a623;">■</strong> Parcial &lt;50% (surtir)</span>
+    <span><strong style="color:#e8500a;">■</strong> Faltan tarimas</span>
+  </div>
+
+  <!-- TABLA INVENTARIO -->
+  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;background:#e8500a;color:#fff;padding:8px 14px;margin-top:8px;">CONTEO DE INVENTARIO</div>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:#111318;color:#f5a623;">
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;">Código</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:left;">Descripción</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">ESP/TAR</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">PZAS/TAR</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">TARIMAS INV.</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">PARCIAL</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">POR SURTIR</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  ${hasEx ? `
+  <!-- MATERIAL EXTRA -->
+  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;background:#f5a623;color:#111;padding:8px 14px;margin-top:24px;">SOLICITUD DE MATERIAL EXTRA POR PARTE DEL CLIENTE</div>
+  <table style="width:100%;margin-bottom:4px;border-collapse:collapse;background:#f9f9f9;font-size:12px;">
+    <tr>
+      <td style="padding:8px 14px;border:1px solid #e0ddd6;"><strong>Cliente:</strong> ${state.extraCliente||'—'}</td>
+      <td style="padding:8px 14px;border:1px solid #e0ddd6;"><strong>Responsable:</strong> ${state.extraResp||'—'}</td>
+    </tr>
+  </table>
+  <table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr style="background:#111318;color:#f5a623;">
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;">Código</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:left;">Descripción</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">Tarimas Solicitadas</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;">Motivo (opcional)</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;">Firma Responsable</th>
+      </tr>
+    </thead>
+    <tbody>${exRows}</tbody>
+  </table>` : ''}
+
+  <!-- FOOTER -->
+  <div style="border-top:2px solid #e8500a;padding-top:12px;margin-top:24px;display:flex;justify-content:space-between;font-size:10px;color:#aaaaaa;letter-spacing:1px;">
+    <span>CONTITECH AS — Sistema de Control de Inventario</span>
+    <span>Generado: ${new Date().toLocaleString('es-MX')}</span>
+  </div>
+
+</div>
+</body></html>`;
+}
+
+// ────────────────────────────────────────
+// REINICIO
+// ────────────────────────────────────────
+let _resetPending = false;
+let _resetTimer = null;
+
+function resetInventario() {
+  if (!_resetPending) {
+    _resetPending = true;
+    const el = document.getElementById('toast');
+    el.innerHTML = '⚠️ Toca de nuevo para confirmar reinicio';
+    el.className = 'toast err show';
+    clearTimeout(_tt);
+    clearTimeout(_resetTimer);
+    _resetTimer = setTimeout(() => { _resetPending = false; el.classList.remove('show'); }, 3000);
+    return;
+  }
+  // Confirmed
+  clearTimeout(_resetTimer);
+  _resetPending = false;
+  // Reset state
+  state.fecha = '';
+  state.responsable = '';
+  state.turno = '';
+  state.observaciones = '';
+  state.inv = productos.map(() => ({ tarimas:'', pzas_parciales:'', total_parciales:'' }));
+  state.currentProd = 0;
+  state.extras = [];
+  state.extraCliente = '';
+  state.extraResp = '';
+  // Reset meta form
+  const t = new Date();
+  document.getElementById('f_fecha').value =
+    `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+  document.getElementById('f_resp').value = '';
+  document.getElementById('f_turno').value = '';
+  document.getElementById('f_obs').value = '';
+  showScreen('screenMeta');
+  showToast('✓ Inventario reiniciado');
+}
+
+// ────────────────────────────────────────
+// GESTIÓN DE CORREOS
+// ────────────────────────────────────────
+function openEmailModal() {
+  renderEmailList();
+  document.getElementById('emailModal').classList.add('show');
+}
+
+function closeEmailModal() {
+  document.getElementById('emailModal').classList.remove('show');
+}
+
+function renderEmailList() {
+  const wrap = document.getElementById('emailListWrap');
+  wrap.innerHTML = '';
+  EMAIL_LIST.forEach((email, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+    div.innerHTML = `
+      <input class="field-input" type="email" value="${email}" id="em_${i}"
+        placeholder="correo@empresa.com" style="flex:1;padding:11px 13px;font-size:14px;">
+      <button onclick="removeEmail(${i})" style="width:36px;height:44px;background:var(--bg);border:2px solid var(--border);border-radius:10px;font-size:16px;cursor:pointer;color:var(--muted);flex-shrink:0;">✕</button>`;
+    wrap.appendChild(div);
+  });
+}
+
+function addEmailField() {
+  syncEmails();
+  EMAIL_LIST.push('');
+  renderEmailList();
+  // focus last
+  setTimeout(() => {
+    const inputs = document.querySelectorAll('#emailListWrap input');
+    inputs[inputs.length-1]?.focus();
+  }, 50);
+}
+
+function removeEmail(i) {
+  syncEmails();
+  if (EMAIL_LIST.length <= 1) { showToast('Debe haber al menos un destinatario','err'); return; }
+  EMAIL_LIST.splice(i, 1);
+  renderEmailList();
+}
+
+function syncEmails() {
+  EMAIL_LIST = Array.from(document.querySelectorAll('#emailListWrap input'))
+    .map(el => el.value.trim())
+    .filter(e => e);
+}
+
+function saveEmails() {
+  syncEmails();
+  if (EMAIL_LIST.length === 0) { showToast('Agrega al menos un correo','err'); return; }
+  closeEmailModal();
+  showToast(`✓ ${EMAIL_LIST.length} destinatario${EMAIL_LIST.length>1?'s':''} guardado${EMAIL_LIST.length>1?'s':''}`);
+}
+
+// ── UI HELPERS ──
+function showLoading(t) { document.getElementById('loaderTxt').textContent=t; document.getElementById('loadingOverlay').classList.add('show'); }
+function setLoaderTxt(t) { document.getElementById('loaderTxt').textContent=t; }
+function hideLoading() { document.getElementById('loadingOverlay').classList.remove('show'); }
+let _tt;
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = `toast ${type==='err'?'err':''} show`;
+  clearTimeout(_tt); _tt = setTimeout(()=>el.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
