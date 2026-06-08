@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
+<!-- saved from url=(0049)file:///C:/Users/juan.blanco/Downloads/index.html -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Inventario CONTITECH</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<link href="./index_files/css2" rel="stylesheet">
+<script src="./index_files/email.min.js.descargar"></script>
 <style>
 :root {
   --bg: #f2f0eb;
@@ -947,20 +947,19 @@ async function sendReport() {
       return;
     }
 
-    // Enviar a cada destinatario de la lista
+    // Enviar un solo correo a todos los destinatarios
     const recipients = EMAIL_LIST.filter(e => e.trim());
-    for (const email of recipients) {
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        to_email:    email.trim(),
-        from_name:   'Sistema Inventario CONTITECH AS',
-        fecha:       state.fecha,
-        responsable: state.responsable,
-        turno:       state.turno || '—',
-        subject:     `Inventario CONTITECH AS — ${state.fecha}`,
-        message:     `Inventario del ${state.fecha}, responsable: ${state.responsable}.`,
-        html_body:   htmlBody,
-      });
-    }
+    const toEmail = recipients.map(e => e.trim()).join(',');
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email:    toEmail,
+      from_name:   'Sistema Inventario CONTITECH AS',
+      fecha:       state.fecha,
+      responsable: state.responsable,
+      turno:       state.turno || '—',
+      subject:     `Inventario CONTITECH AS — ${state.fecha}`,
+      message:     `Inventario del ${state.fecha}, responsable: ${state.responsable}.`,
+      html_body:   htmlBody,
+    });
 
     hideLoading();
     document.getElementById('doneEmail').innerHTML = EMAIL_LIST.filter(e=>e.trim())
@@ -1264,5 +1263,6 @@ function showToast(msg, type) {
   clearTimeout(_tt); _tt = setTimeout(()=>el.classList.remove('show'), 2800);
 }
 </script>
-</body>
-</html>
+
+
+</body></html>
