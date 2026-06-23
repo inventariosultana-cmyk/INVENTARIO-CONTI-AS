@@ -510,6 +510,10 @@ let EMAIL_LIST = [
   'practicantedlslp@cartonsultana.com.mx',
   'practicantedlslp2@cartonsultana.com.mx',
   'practicanteventasslp@cartonsultana.com.mx',
+  'erika.martinez@continental.com',
+  'christian.yahir.martinez.guzman@continental.com',
+  'noe.cano@continental.com',
+  'juan.domingo.moreno@continental.com',
 ];
 emailjs.init(EMAILJS_PUBLIC_KEY);
 
@@ -517,7 +521,7 @@ emailjs.init(EMAILJS_PUBLIC_KEY);
 const productos = [
   { codigo:'149999', desc:'7303443 GENERICA CONTI 1/4 S/L',  cat:'ROJO MORADO ROSA', esp:2, pzas:80   },
   { codigo:'156120', desc:'7303444 GENERICA CONT1/6 S/L',    cat:'ROJO MORADO ROSA', esp:1, pzas:150  },
-  { codigo:'156574', desc:'7302335 CONTI 1/6',                cat:'ROJO MORADO ROSA', esp:4, pzas:160  },
+  { codigo:'156574', desc:'7302335 CONTI 1/6',                cat:'ROJO MORADO ROSA', esp:4, pzas:150  },
   { codigo:'140550', desc:'SEPARADOR HENDRICKSON QD',         cat:null,               esp:1, pzas:1320 },
   { codigo:'155463', desc:'7302060 CONTI 1/4',                cat:'AZUL',             esp:5, pzas:75   },
   { codigo:'156575', desc:'7302059 CONTI1/2',                 cat:'AZUL',             esp:1, pzas:75   },
@@ -947,19 +951,20 @@ async function sendReport() {
       return;
     }
 
-    // Enviar un solo correo a todos los destinatarios
+    // Enviar a cada destinatario de la lista
     const recipients = EMAIL_LIST.filter(e => e.trim());
-    const toEmail = recipients.map(e => e.trim()).join(',');
-    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email:    toEmail,
-      from_name:   'Sistema Inventario CONTITECH AS',
-      fecha:       state.fecha,
-      responsable: state.responsable,
-      turno:       state.turno || '—',
-      subject:     `Inventario CONTITECH AS — ${state.fecha}`,
-      message:     `Inventario del ${state.fecha}, responsable: ${state.responsable}.`,
-      html_body:   htmlBody,
-    });
+    for (const email of recipients) {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email:    email.trim(),
+        from_name:   'Sistema Inventario CONTITECH AS',
+        fecha:       state.fecha,
+        responsable: state.responsable,
+        turno:       state.turno || '—',
+        subject:     `Inventario CONTITECH AS — ${state.fecha}`,
+        message:     `Inventario del ${state.fecha}, responsable: ${state.responsable}.`,
+        html_body:   htmlBody,
+      });
+    }
 
     hideLoading();
     document.getElementById('doneEmail').innerHTML = EMAIL_LIST.filter(e=>e.trim())
@@ -1017,8 +1022,8 @@ function buildEmailHTML() {
     }
 
     // POR SURTIR = esp - tarimas_en_inv - (1 si parcial cuenta como tarima)
-    const tarimasEfectivas = tarimas + (parcialEsTarima ? 1 : 0);
-    const porSurtir = Math.max(0, esp - tarimasEfectivas);
+    const tarimасEfectivas = tarimas + (parcialEsTarima ? 1 : 0);
+    const porSurtir = Math.max(0, esp - tarimасEfectivas);
 
     // Color de POR SURTIR
     let surtirColor = '#1a7a3f';   // verde = ok, no falta nada
