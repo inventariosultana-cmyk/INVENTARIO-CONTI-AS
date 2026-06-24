@@ -951,20 +951,21 @@ async function sendReport() {
       return;
     }
 
-    // Enviar a cada destinatario de la lista
-    const recipients = EMAIL_LIST.filter(e => e.trim());
-    for (const email of recipients) {
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        to_email:    email.trim(),
-        from_name:   'Sistema Inventario CONTITECH AS',
-        fecha:       state.fecha,
-        responsable: state.responsable,
-        turno:       state.turno || '—',
-        subject:     `Inventario CONTITECH AS — ${state.fecha}`,
-        message:     `Inventario del ${state.fecha}, responsable: ${state.responsable}.`,
-        html_body:   htmlBody,
-      });
-    }
+    // Enviar un solo correo: primero en To, el resto en CC
+    const recipients = EMAIL_LIST.filter(e => e.trim()).map(e => e.trim());
+    const toEmail = recipients[0];
+    const ccEmail = recipients.slice(1).join(',');
+    await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+      to_email:    toEmail,
+      cc_email:    ccEmail,
+      from_name:   'Sistema Inventario CONTITECH AS',
+      fecha:       state.fecha,
+      responsable: state.responsable,
+      turno:       state.turno || '—',
+      subject:     `Inventario CONTITECH AS — ${state.fecha}`,
+      message:     `Inventario del ${state.fecha}, responsable: ${state.responsable}.`,
+      html_body:   htmlBody,
+    });
 
     hideLoading();
     document.getElementById('doneEmail').innerHTML = EMAIL_LIST.filter(e=>e.trim())
