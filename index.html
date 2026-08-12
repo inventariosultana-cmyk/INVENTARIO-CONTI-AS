@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Inventario CONTITECH</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <style>
 :root {
@@ -290,30 +291,8 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
 #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 #toast.err { background: var(--accent); }
 
-/* ── EMAIL MODAL ── */
-#emailModal {
-  position: fixed; inset: 0; background: rgba(17,19,24,0.55);
-  display: none; align-items: flex-end; justify-content: center;
-  z-index: 900; backdrop-filter: blur(3px);
-  padding: 0;
-}
-#emailModal.show { display: flex; }
-.modal-sheet {
-  background: var(--bg); border-radius: 24px 24px 0 0;
-  width: 100%; max-width: 560px;
-  padding: 20px 18px 36px;
-  animation: slideUp 0.3s cubic-bezier(.34,1.56,.64,1);
-  max-height: 85vh; display: flex; flex-direction: column;
-}
-.modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
-.modal-title { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; margin-bottom: 4px; }
-.modal-sub { font-size: 12px; color: var(--muted); margin-bottom: 18px; line-height: 1.5; }
-.modal-scroll { flex: 1; overflow-y: auto; }
-
-/* ── RESET BTN ── */
-.btn-danger { background: #fff0ee; color: var(--accent); border: 2px solid rgba(232,80,10,0.2); }
-.btn-danger:active { background: #ffd0c0; }
-
+/* ── EMAIL CANVAS ── */
+#emailCanvas { position: fixed; left: -9999px; top: 0; width: 960px; background: #fff; display: none; }
 
 /* ── DONE SCREEN ── */
 .done-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; text-align: center; }
@@ -328,23 +307,7 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
 
 <div id="loadingOverlay"><div class="loader-ring"></div><div class="loader-text" id="loaderTxt">Procesando...</div></div>
 <div id="toast"></div>
-
-<!-- ══════════════════════════════════════
-     MODAL: GESTIÓN DE CORREOS
-══════════════════════════════════════ -->
-<div id="emailModal" onclick="if(event.target===this)closeEmailModal()">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-title">✉️ Destinatarios</div>
-    <div class="modal-sub">El reporte se enviará a todos estos correos. Puedes editar la lista cuando necesites.</div>
-    <div class="modal-scroll" id="emailListWrap"></div>
-    <button class="add-btn" style="margin-top:12px;margin-bottom:12px;" onclick="addEmailField()">+ Agregar correo</button>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="closeEmailModal()">Cancelar</button>
-      <button class="btn btn-accent" onclick="saveEmails()">Guardar lista</button>
-    </div>
-  </div>
-</div>
+<div id="emailCanvas"></div>
 
 <!-- ══════════════════════════════════════
      SCREEN 1: META (datos generales)
@@ -386,7 +349,6 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
     <div class="topbar-right">
       <div class="pill green" id="listPillDone">0 listos</div>
       <div class="pill" id="listPillPend">12 faltantes</div>
-      <button class="back-btn" title="Reiniciar inventario" onclick="resetInventario()" style="font-size:13px;color:var(--accent);">↺</button>
     </div>
   </div>
   <div class="prog-track"><div class="prog-fill" id="listProgress" style="width:15%"></div></div>
@@ -459,10 +421,7 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
     <div class="topbar-right" style="justify-content:space-between;width:100%;">
       <button class="back-btn" onclick="showExtra()">←</button>
       <div class="topbar-logo">CONTI<span>TECH</span></div>
-      <div style="display:flex;gap:6px;">
-        <button class="back-btn" title="Editar destinatarios" onclick="openEmailModal()" style="font-size:14px;">✉️</button>
-        <button class="back-btn" title="Reiniciar inventario" onclick="resetInventario()" style="font-size:14px;color:var(--accent);">↺</button>
-      </div>
+      <div class="pill">Resumen</div>
     </div>
   </div>
   <div class="prog-track"><div class="prog-fill" style="width:92%"></div></div>
@@ -486,48 +445,29 @@ html, body { height: 100%; background: var(--bg); font-family: 'DM Sans', sans-s
     <div class="done-sub">El inventario fue enviado correctamente a:</div>
     <div class="done-email" id="doneEmail"></div>
     <div class="done-detail" id="doneDetail"></div>
-    <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:400px;">
-      <button class="btn btn-dark btn-full" style="justify-content:center;" onclick="resetInventario()">↺ &nbsp;Nuevo inventario</button>
-      <button class="btn btn-ghost btn-full" style="justify-content:center;" onclick="openEmailModal()">✉️ &nbsp;Editar destinatarios</button>
-    </div>
+    <button class="btn btn-dark btn-full" style="max-width:400px;justify-content:center;" onclick="location.reload()">Nuevo inventario</button>
   </div>
 </div>
 
 <script>
 // ── CONFIG ──
-const EMAILJS_PUBLIC_KEY  = 'DzfcEWiBsQb1cHq5k';
-const EMAILJS_SERVICE_ID  = 'service_hgn8n9j';
-const EMAILJS_TEMPLATE_ID = 'template_yfqr8s8';
-
-// ── LISTA DE DESTINATARIOS ──
-// Edita estos correos aquí o usa el botón ✉ en la pantalla de resumen
-let EMAIL_LIST = [
-  'juan.blanco@cartonsultana.com.mx',
-  'ricardo.cordero@cartonsultana.com.mx',
-  'rocio.martinez@cartonsultana.com.mx',
-  'facturacionsanluis@cartonsultana.com.mx',
-  'edominguez@cartonsultana.com.mx',
-  'practicantedlslp@cartonsultana.com.mx',
-  'practicantedlslp2@cartonsultana.com.mx',
-  'practicanteventasslp@cartonsultana.com.mx',
-  'erika.martinez@continental.com',
-  'christian.yahir.martinez.guzman@continental.com',
-  'noe.cano@continental.com',
-  'juan.domingo.moreno@continental.com',
-];
+const EMAILJS_PUBLIC_KEY  = 'YOUR_PUBLIC_KEY';
+const EMAILJS_SERVICE_ID  = 'YOUR_SERVICE_ID';
+const EMAILJS_TEMPLATE_ID = 'YOUR_TEMPLATE_ID';
+const TO_EMAIL = 'juan.blanco@cartonsultana.com.mx';
 emailjs.init(EMAILJS_PUBLIC_KEY);
 
 // ── PRODUCTS ──
 const productos = [
   { codigo:'149999', desc:'7303443 GENERICA CONTI 1/4 S/L',  cat:'ROJO MORADO ROSA', esp:2, pzas:80   },
-  { codigo:'156120', desc:'7303444 GENERICA CONT1/6 S/L',    cat:'ROJO MORADO ROSA', esp:1, pzas:150  },
-  { codigo:'156574', desc:'7302335 CONTI 1/6',                cat:'ROJO MORADO ROSA', esp:4, pzas:150  },
+  { codigo:'156120', desc:'7303444 GENERICA CONT1/6 S/L',    cat:'ROJO MORADO ROSA', esp:2, pzas:150  },
+  { codigo:'156574', desc:'7302335 CONTI 1/6',                cat:'ROJO MORADO ROSA', esp:4, pzas:160  },
   { codigo:'140550', desc:'SEPARADOR HENDRICKSON QD',         cat:null,               esp:1, pzas:1320 },
   { codigo:'155463', desc:'7302060 CONTI 1/4',                cat:'AZUL',             esp:5, pzas:75   },
   { codigo:'156575', desc:'7302059 CONTI1/2',                 cat:'AZUL',             esp:1, pzas:75   },
   { codigo:'155206', desc:'7302055 ASC2 AUTOMAN',             cat:null,               esp:8, pzas:150  },
   { codigo:'155207', desc:'7302056 ASC3 AUTOMAN 42KBC',       cat:'VERDE',            esp:4, pzas:240  },
-  { codigo:'155208', desc:'7302057 ASC4 AUTOMAN 42KBC',       cat:'VERDE',            esp:1, pzas:160  },
+  { codigo:'151103', desc:'7302057 ASC4 AUTOMAN 42KBC',       cat:'VERDE',            esp:1, pzas:160  },
   { codigo:'155209', desc:'7302058 ASC8 AUTOMAN 42KBC',       cat:'NARANJA',          esp:3, pzas:240  },
   { codigo:'841601', desc:'PAD SAF 23KC HOLLAND CONTI 1/4',   cat:null,               esp:1, pzas:500  },
   { codigo:'841588', desc:'PAD SAF 23KC CONTI 1/2',           cat:null,               esp:1, pzas:250  },
@@ -940,9 +880,9 @@ function renderReview() {
 // SEND REPORT
 // ────────────────────────────────────────
 async function sendReport() {
-  showLoading('Preparando reporte...');
+  showLoading('Generando imagen...');
   try {
-    const htmlBody = buildEmailHTML();
+    const imgData = await buildEmailImage();
     setLoaderTxt('Enviando correo...');
 
     if (EMAILJS_PUBLIC_KEY === 'YOUR_PUBLIC_KEY') {
@@ -951,25 +891,20 @@ async function sendReport() {
       return;
     }
 
-    // Enviar un solo correo: primero en To, el resto en CC
-    const recipients = EMAIL_LIST.filter(e => e.trim()).map(e => e.trim());
-    const toEmail = recipients[0];
-    const ccEmail = recipients.slice(1).join(',');
     await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-      to_email:    toEmail,
-      cc_email:    ccEmail,
-      from_name:   'Sistema Inventario CONTITECH AS',
-      fecha:       state.fecha,
-      responsable: state.responsable,
-      turno:       state.turno || '—',
-      subject:     `Inventario CONTITECH AS — ${state.fecha}`,
-      message:     `Inventario del ${state.fecha}, responsable: ${state.responsable}.`,
-      html_body:   htmlBody,
+      to_email:     TO_EMAIL,
+      from_name:    'Sistema Inventario CONTITECH AS',
+      fecha:        state.fecha,
+      responsable:  state.responsable,
+      turno:        state.turno || '—',
+      subject:      `Inventario CONTITECH AS — ${state.fecha}`,
+      message:      `Inventario del ${state.fecha}, responsable: ${state.responsable}. Ver imagen adjunta.`,
+      image_base64: imgData,
     });
 
     hideLoading();
-    document.getElementById('doneEmail').innerHTML = EMAIL_LIST.filter(e=>e.trim())
-      .map(e => `<div>${e.trim()}</div>`).join('');
+    // DONE screen
+    document.getElementById('doneEmail').textContent = TO_EMAIL;
     document.getElementById('doneDetail').innerHTML =
       `📅 Fecha: <strong>${state.fecha}</strong><br>👤 Responsable: <strong>${state.responsable}</strong><br>🕐 Turno: <strong>${state.turno||'—'}</strong>`;
     showScreen('screenDone');
@@ -997,265 +932,95 @@ function showSetupNote() {
 }
 
 // ────────────────────────────────────────
-// BUILD EMAIL HTML
+// BUILD EMAIL IMAGE
 // ────────────────────────────────────────
-function buildEmailHTML() {
+async function buildEmailImage() {
   const rows = productos.map((p,i) => {
     const r = state.inv[i];
-    const bg = i%2===0 ? '#f9f9f9' : '#ffffff';
-
-    const tarimas     = parseInt(r.tarimas) || 0;
-    const pzasParcial = parseInt(r.pzas_parciales) || 0;
-    const esp         = parseInt(p.esp) || 1;  // espacios/tarima (capacidad)
-
-    // Regla del parcial:
-    // Si pzasParcial >= 50% de pzas/tarima → cuenta como tarima completa (no surtir)
-    // Si pzasParcial > 0 y < 50%           → cuenta como faltante (sí surtir)
-    let parcialEsTarima = false;
-    let parcialEsFaltante = false;
-    if (pzasParcial > 0) {
-      const mitad = p.pzas / 2;
-      if (pzasParcial >= mitad) {
-        parcialEsTarima = true;   // ≥50%: equivale a tarima completa
-      } else {
-        parcialEsFaltante = true; // <50%: falta completar
-      }
-    }
-
-    // POR SURTIR = esp - tarimas_en_inv - (1 si parcial cuenta como tarima)
-    const tarimасEfectivas = tarimas + (parcialEsTarima ? 1 : 0);
-    const porSurtir = Math.max(0, esp - tarimасEfectivas);
-
-    // Color de POR SURTIR
-    let surtirColor = '#1a7a3f';   // verde = ok, no falta nada
-    if (parcialEsFaltante) surtirColor = '#f5a623';  // naranja = parcial insuficiente
-    if (porSurtir > 0)     surtirColor = '#e8500a';  // rojo = faltan tarimas completas
-
-    // Texto del parcial: solo mostrar piezas si hay
-    const parcialTxt = pzasParcial > 0
-      ? `${pzasParcial} pzas${parcialEsTarima ? ' ✓' : ' ⚠️'}`
-      : '—';
-
+    const bg = i%2===0 ? '#f9f9f9' : '#fff';
     return `<tr style="background:${bg}">
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;font-size:11px;color:#888;">${p.cat||''}</td>
       <td style="padding:8px 10px;border:1px solid #e0ddd6;font-family:monospace;font-weight:700;">${p.codigo}</td>
       <td style="padding:8px 10px;border:1px solid #e0ddd6;font-size:12px;">${p.desc}</td>
       <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">${p.esp}</td>
       <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">${p.pzas.toLocaleString()}</td>
       <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;font-weight:700;font-size:15px;color:${r.tarimas!==''?'#1a7a3f':'#bbb'};">${r.tarimas||'—'}</td>
-      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;font-size:11px;color:#555;">${parcialTxt}</td>
-      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;font-weight:700;color:${surtirColor};">${r.tarimas==='' ? '—' : porSurtir}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">∅</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">${r.pzas_parciales||'—'}</td>
+      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">${r.total_parciales||'—'}</td>
     </tr>`;
   }).join('');
 
   const hasEx = state.extras.some(e=>e.codigo||e.desc);
   const exRows = hasEx ? state.extras.filter(e=>e.codigo||e.desc).map(e=>
-    `<tr>
-      <td style="padding:8px 10px;border:1px solid #e0ddd6;font-family:monospace;font-weight:700;">${e.codigo}</td>
-      <td style="padding:8px 10px;border:1px solid #e0ddd6;">${e.desc}</td>
-      <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">${e.tarimas}</td>
-      <td style="padding:8px 10px;border:1px solid #e0ddd6;">${e.motivo}</td>
-      <td style="padding:8px 10px;border:1px solid #e0ddd6;"></td>
-    </tr>`
+    `<tr><td style="padding:8px 10px;border:1px solid #e0ddd6;font-family:monospace;font-weight:700;">${e.codigo}</td>
+     <td style="padding:8px 10px;border:1px solid #e0ddd6;">${e.desc}</td>
+     <td style="padding:8px 10px;border:1px solid #e0ddd6;text-align:center;">${e.tarimas}</td>
+     <td style="padding:8px 10px;border:1px solid #e0ddd6;">${e.motivo}</td>
+     <td style="padding:8px 10px;border:1px solid #e0ddd6;"></td></tr>`
   ).join('') : '';
 
   const totalT = state.inv.reduce((s,r)=>s+(parseInt(r.tarimas)||0),0);
   const filled = state.inv.filter(r=>r.tarimas!=='').length;
 
-  return `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#f2f0eb;font-family:Arial,sans-serif;">
-<div style="max-width:900px;margin:0 auto;background:#ffffff;padding:32px;">
-
-  <!-- HEADER -->
-  <div style="background:#111318;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-    <div>
-      <div style="color:#e8500a;font-size:22px;font-weight:700;font-family:monospace;letter-spacing:2px;">CONTITECH AS</div>
-      <div style="color:#aaaaaa;font-size:11px;letter-spacing:2px;margin-top:4px;">REPORTE DE INVENTARIO</div>
+  const html = `<div style="background:#fff;padding:32px;font-family:Arial,sans-serif;width:920px;">
+    <div style="background:#111;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <div><div style="color:#e8500a;font-size:22px;font-weight:700;font-family:monospace;letter-spacing:2px;">CONTITECH AS</div>
+        <div style="color:#aaa;font-size:11px;letter-spacing:2px;margin-top:4px;">REPORTE DE INVENTARIO</div></div>
+      <div style="text-align:right;"><div style="color:#aaa;font-size:10px;letter-spacing:2px;">FECHA</div>
+        <div style="color:#f5a623;font-size:20px;font-family:monospace;font-weight:700;">${state.fecha}</div></div>
     </div>
-    <div style="text-align:right;">
-      <div style="color:#aaaaaa;font-size:10px;letter-spacing:2px;">FECHA</div>
-      <div style="color:#f5a623;font-size:20px;font-family:monospace;font-weight:700;">${state.fecha}</div>
-    </div>
-  </div>
-
-  <!-- RESUMEN -->
-  <table style="width:100%;border-collapse:collapse;margin-bottom:8px;background:#f9f9f9;">
-    <tr>
-      <td style="padding:10px 16px;border:1px solid #e0ddd6;">
-        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Responsable</strong><br>
-        <span style="font-size:14px;">${state.responsable}</span>
-      </td>
-      <td style="padding:10px 16px;border:1px solid #e0ddd6;">
-        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Turno</strong><br>
-        <span style="font-size:14px;">${state.turno||'—'}</span>
-      </td>
-      <td style="padding:10px 16px;border:1px solid #e0ddd6;">
-        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Tarimas</strong><br>
-        <span style="font-size:18px;font-weight:700;color:#1a7a3f;">${totalT}</span>
-      </td>
-      <td style="padding:10px 16px;border:1px solid #e0ddd6;">
-        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Productos</strong><br>
-        <span style="font-size:14px;">${filled} / ${productos.length}</span>
-      </td>
-      ${state.observaciones ? `<td style="padding:10px 16px;border:1px solid #e0ddd6;">
-        <strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Observaciones</strong><br>
-        <span style="font-size:13px;">${state.observaciones}</span>
-      </td>` : ''}
-    </tr>
-  </table>
-
-  <!-- LEYENDA COLORES -->
-  <div style="display:flex;gap:16px;margin:12px 0;font-size:11px;color:#555;">
-    <span><strong style="color:#1a7a3f;">■</strong> Completo</span>
-    <span><strong style="color:#f5a623;">■</strong> Parcial &lt;50% (surtir)</span>
-    <span><strong style="color:#e8500a;">■</strong> Faltan tarimas</span>
-  </div>
-
-  <!-- TABLA INVENTARIO -->
-  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;background:#e8500a;color:#fff;padding:8px 14px;margin-top:8px;">CONTEO DE INVENTARIO</div>
-  <table style="width:100%;border-collapse:collapse;">
-    <thead>
-      <tr style="background:#111318;color:#f5a623;">
+    <table style="width:100%;border-collapse:collapse;margin-bottom:8px;background:#f9f9f9;">
+      <tr>
+        <td style="padding:10px 16px;border:1px solid #e0ddd6;"><strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Responsable</strong><br><span style="font-size:14px;">${state.responsable}</span></td>
+        <td style="padding:10px 16px;border:1px solid #e0ddd6;"><strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Turno</strong><br><span style="font-size:14px;">${state.turno||'—'}</span></td>
+        <td style="padding:10px 16px;border:1px solid #e0ddd6;"><strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Total Tarimas</strong><br><span style="font-size:18px;font-weight:700;color:#1a7a3f;">${totalT}</span></td>
+        <td style="padding:10px 16px;border:1px solid #e0ddd6;"><strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Productos</strong><br><span style="font-size:14px;">${filled} / ${productos.length}</span></td>
+        ${state.observaciones?`<td style="padding:10px 16px;border:1px solid #e0ddd6;"><strong style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1px;">Observaciones</strong><br><span style="font-size:13px;">${state.observaciones}</span></td>`:''}
+      </tr>
+    </table>
+    <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;background:#e8500a;color:#fff;padding:8px 14px;margin-top:20px;">CONTEO DE INVENTARIO</div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="background:#111;color:#f5a623;">
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;letter-spacing:1px;">Categoría</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;">Código</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:left;">Descripción</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">ESP/TAR</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">PZAS/TAR</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">TARIMAS INV.</th>
-        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">PARCIAL</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">POR SURTIR</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
-
-  ${hasEx ? `
-  <!-- MATERIAL EXTRA -->
-  <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;background:#f5a623;color:#111;padding:8px 14px;margin-top:24px;">SOLICITUD DE MATERIAL EXTRA POR PARTE DEL CLIENTE</div>
-  <table style="width:100%;margin-bottom:4px;border-collapse:collapse;background:#f9f9f9;font-size:12px;">
-    <tr>
-      <td style="padding:8px 14px;border:1px solid #e0ddd6;"><strong>Cliente:</strong> ${state.extraCliente||'—'}</td>
-      <td style="padding:8px 14px;border:1px solid #e0ddd6;"><strong>Responsable:</strong> ${state.extraResp||'—'}</td>
-    </tr>
-  </table>
-  <table style="width:100%;border-collapse:collapse;">
-    <thead>
-      <tr style="background:#111318;color:#f5a623;">
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">CANT. PARCIALES</th>
+        <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">TOTAL TAR. PARC.</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${hasEx ? `
+    <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;background:#f5a623;color:#111;padding:8px 14px;margin-top:24px;">SOLICITUD DE MATERIAL EXTRA POR PARTE DEL CLIENTE</div>
+    <table style="width:100%;margin-bottom:4px;border-collapse:collapse;background:#f9f9f9;font-size:12px;">
+      <tr><td style="padding:8px 14px;border:1px solid #e0ddd6;"><strong>Cliente:</strong> ${state.extraCliente||'—'}</td>
+          <td style="padding:8px 14px;border:1px solid #e0ddd6;"><strong>Responsable:</strong> ${state.extraResp||'—'}</td></tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="background:#111;color:#f5a623;">
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;">Código</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:left;">Descripción</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;text-align:center;">Tarimas Solicitadas</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;">Motivo (opcional)</th>
         <th style="padding:9px 10px;border:1px solid #222;font-size:10px;">Firma Responsable</th>
-      </tr>
-    </thead>
-    <tbody>${exRows}</tbody>
-  </table>` : ''}
+      </tr></thead>
+      <tbody>${exRows}</tbody>
+    </table>` : ''}
+    <div style="border-top:2px solid #e8500a;padding-top:12px;margin-top:24px;display:flex;justify-content:space-between;font-size:10px;color:#aaa;letter-spacing:1px;">
+      <span>CONTITECH AS — Sistema de Control de Inventario</span>
+      <span>Generado: ${new Date().toLocaleString('es-MX')}</span>
+    </div>
+  </div>`;
 
-  <!-- FOOTER -->
-  <div style="border-top:2px solid #e8500a;padding-top:12px;margin-top:24px;display:flex;justify-content:space-between;font-size:10px;color:#aaaaaa;letter-spacing:1px;">
-    <span>CONTITECH AS — Sistema de Control de Inventario</span>
-    <span>Generado: ${new Date().toLocaleString('es-MX')}</span>
-  </div>
-
-</div>
-</body></html>`;
-}
-
-// ────────────────────────────────────────
-// REINICIO
-// ────────────────────────────────────────
-let _resetPending = false;
-let _resetTimer = null;
-
-function resetInventario() {
-  if (!_resetPending) {
-    _resetPending = true;
-    const el = document.getElementById('toast');
-    el.innerHTML = '⚠️ Toca de nuevo para confirmar reinicio';
-    el.className = 'toast err show';
-    clearTimeout(_tt);
-    clearTimeout(_resetTimer);
-    _resetTimer = setTimeout(() => { _resetPending = false; el.classList.remove('show'); }, 3000);
-    return;
-  }
-  // Confirmed
-  clearTimeout(_resetTimer);
-  _resetPending = false;
-  // Reset state
-  state.fecha = '';
-  state.responsable = '';
-  state.turno = '';
-  state.observaciones = '';
-  state.inv = productos.map(() => ({ tarimas:'', pzas_parciales:'', total_parciales:'' }));
-  state.currentProd = 0;
-  state.extras = [];
-  state.extraCliente = '';
-  state.extraResp = '';
-  // Reset meta form
-  const t = new Date();
-  document.getElementById('f_fecha').value =
-    `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
-  document.getElementById('f_resp').value = '';
-  document.getElementById('f_turno').value = '';
-  document.getElementById('f_obs').value = '';
-  showScreen('screenMeta');
-  showToast('✓ Inventario reiniciado');
-}
-
-// ────────────────────────────────────────
-// GESTIÓN DE CORREOS
-// ────────────────────────────────────────
-function openEmailModal() {
-  renderEmailList();
-  document.getElementById('emailModal').classList.add('show');
-}
-
-function closeEmailModal() {
-  document.getElementById('emailModal').classList.remove('show');
-}
-
-function renderEmailList() {
-  const wrap = document.getElementById('emailListWrap');
-  wrap.innerHTML = '';
-  EMAIL_LIST.forEach((email, i) => {
-    const div = document.createElement('div');
-    div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
-    div.innerHTML = `
-      <input class="field-input" type="email" value="${email}" id="em_${i}"
-        placeholder="correo@empresa.com" style="flex:1;padding:11px 13px;font-size:14px;">
-      <button onclick="removeEmail(${i})" style="width:36px;height:44px;background:var(--bg);border:2px solid var(--border);border-radius:10px;font-size:16px;cursor:pointer;color:var(--muted);flex-shrink:0;">✕</button>`;
-    wrap.appendChild(div);
-  });
-}
-
-function addEmailField() {
-  syncEmails();
-  EMAIL_LIST.push('');
-  renderEmailList();
-  // focus last
-  setTimeout(() => {
-    const inputs = document.querySelectorAll('#emailListWrap input');
-    inputs[inputs.length-1]?.focus();
-  }, 50);
-}
-
-function removeEmail(i) {
-  syncEmails();
-  if (EMAIL_LIST.length <= 1) { showToast('Debe haber al menos un destinatario','err'); return; }
-  EMAIL_LIST.splice(i, 1);
-  renderEmailList();
-}
-
-function syncEmails() {
-  EMAIL_LIST = Array.from(document.querySelectorAll('#emailListWrap input'))
-    .map(el => el.value.trim())
-    .filter(e => e);
-}
-
-function saveEmails() {
-  syncEmails();
-  if (EMAIL_LIST.length === 0) { showToast('Agrega al menos un correo','err'); return; }
-  closeEmailModal();
-  showToast(`✓ ${EMAIL_LIST.length} destinatario${EMAIL_LIST.length>1?'s':''} guardado${EMAIL_LIST.length>1?'s':''}`);
+  const el = document.getElementById('emailCanvas');
+  el.innerHTML = html; el.style.display = 'block';
+  const canvas = await html2canvas(el, { scale:2, backgroundColor:'#fff', logging:false, useCORS:true });
+  el.style.display = 'none';
+  return canvas.toDataURL('image/png');
 }
 
 // ── UI HELPERS ──
